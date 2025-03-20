@@ -70,7 +70,7 @@ Enjoy! Feel free to use BattyBirdNET-Pi for your acoustic analyses and research.
   year = {2023},
   publisher = {GitHub},
   journal = {GitHub repository},
-  howpublished = {\url{https://github.com/rdz-oss/BattyBirdNET-Pi }}
+  howpublished = {\url{https://github.com/alexbelgium/BattyBirdNET-Pi }}
 }
 ```
 Be aware there is a  limitation: you cannot use it to build a commercial system.
