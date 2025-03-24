@@ -23,11 +23,10 @@ h3 {
 }
 
 iframe {
-  padding: 0;
-  margin: 0;
   border: none;
   height: 85%;
   width: 100%;
+  position: fixed;
 }
 
 body {
@@ -133,11 +132,56 @@ button:hover {
   font-size: x-large;
 }
 
+.chartdiv {
+  position: fixed;
+  top: 0%;
+  left: 50%;
+  width: calc(40% - 2px);
+  height: calc(25% - 2px);
+  background-color: #fff;
+  z-index: 9999;
+  overflow: auto;
+  border-radius: 5px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
 .logo img {
   position: absolute;
   top: 0;
   left: 0;
   padding: 10px;
+}
+
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0,0,0,0.4);
+}
+
+.modal-content {
+  background-color: #fefefe;
+  margin: 15% auto;
+  padding: 20px;
+  border: 1px solid #888;
+  width: 80%;
+  text-align: center; /* Center the content */
+}
+
+@media (max-width: 768px) {
+  .modal-content {
+    width: 95%;
+    margin: 10% auto;
+  }
+  #labelDropdown {
+    max-width: 100%;
+    overflow-x: auto;
+  }
 }
 
 .topnav {
@@ -150,7 +194,7 @@ button:hover {
   margin-left: auto;
   margin-right: auto;
   margin-bottom: 15px;
-  box-shadow: 0px 0px 28px 1px rgba(0, 0, 0, 0.10); !important;
+  box-shadow: 0px 0px 28px 1px rgba(0, 0, 0, 0.10) !important;
   border-radius: 4px;
 }
 
@@ -169,12 +213,11 @@ button:hover {
   text-align: center;
   padding: 14px 16px;
   width: auto;
-  height: 100%;
   vertical-align: middle;
 }
 
 .topnav button:hover {
-  background-color: rgb(219, 295, 235);
+  background-color: rgb(219, 255, 235);
   color: black;
 }
 
@@ -184,21 +227,12 @@ button:hover {
 }
 
 .topnav .button-hover {
-  background-color: rgb(219, 295, 235) !important;
+  background-color: rgb(219, 255, 235) !important;
   color: black;
 }
 
 .topnav .icon {
   display: none;
-}
-
-.play table {
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.stats table {
-  width: 60%;
 }
 
 .overview th {
@@ -225,9 +259,11 @@ button:hover {
 .overview-stats {
   display: flex;
   justify-content: center;
-  align-items: baseline;
 }
 
+.center-column {
+  display: none;
+}
 .left-column {
   flex: 10%;
   padding-left: 10px;
@@ -283,6 +319,14 @@ button:hover {
   padding: 12px;
 }
 
+.settings h2 {
+  margin-top: 0px;
+}
+
+.settings p {
+  margin-bottom: 0px;
+}
+
 .settings h3 {
   text-align: left;
 }
@@ -295,6 +339,11 @@ button:hover {
 .settings button:hover {
   background-color: rgb(159, 226, 155);
   color: black;
+}
+
+.float button {
+  margin-top: 6px;
+  margin-bottom: 6px;
 }
 
 .customlabels,.customlabels2 {
@@ -365,18 +414,33 @@ button:hover {
 }
 
 .systemcontrols form,.servicecontrols form {
-  text-align: center;
+  /*text-align: center;*/
 }
 
-.systemcontrols button,.servicecontrols button {
-  
+.servicecontrols button {
   background-color: rgb(219, 255, 235);
   padding: 12px;
   width: 50%;
 }
 
+.systemcontrols button {
+  background-color: rgb(219, 255, 235);
+  display: block;
+  padding: 12px;
+  width: 50%;
+  margin: 16px auto;
+}
+
 .servicecontrols button {
   width: 20%;
+}
+
+.btn-group-center {
+  text-align:center;
+  /*align-content: center;*/
+  margin: 16px auto;
+  position:relative;
+  /*display:inline-block;*/
 }
 
 .slider {
@@ -416,6 +480,10 @@ button:hover {
   .column1,.column2,.column3,.column4 {
     height: 90%
   }
+  .center-column {
+    display: flex;
+    justify-content: center;
+  }
   .left-column {
     display: none;
   }
@@ -430,7 +498,7 @@ button:hover {
     overflow-x: hidden;
   }
   .overview .right-column .chart img {
-    margin-left: 5%;
+    margin-left: auto;
     margin-right: auto;
     margin-top: 10px;
   }
@@ -503,7 +571,7 @@ button:hover {
     margin-right:auto;
   }
   .overview img {
-    width: 100%
+    max-width: 100%
   }
   .banner {
     height: auto;
@@ -547,6 +615,10 @@ button:hover {
   .topnav.responsive button {
     display: block;
   }
+  .center-column {
+    display: flex;
+    justify-content: center;
+  }
   .left-column {
     display: none;
   }
@@ -575,9 +647,19 @@ button:hover {
 .sortbutton {
   margin-top:10px;
   font-size:x-large;
-  background:#dbffeb;
+  background:#77c487;
   padding:5px;
   box-shadow: 0px 0px 5px 2px rgba(0, 0, 0, 0.10);
+}
+
+.sortbutton:hover {
+  background-color: #dbffeb;
+  color: white;
+}
+
+.sortbutton.active {
+  background-color: #dbffeb;
+  color: white;
 }
 
 button.legacyview {
@@ -766,7 +848,9 @@ form#views button .updatenumber {
 }
 #recent_detection_middle_td img{
   width:unset !important;
-  height:75px;
+  max-width:50px;
+  max-height:50px;
+  padding:0px;
   float:left;
 }
 
@@ -784,13 +868,20 @@ form#views button .updatenumber {
 .settingstable h2 {
   font-size:x-large;
 }
+.plaintable {
+  box-shadow: unset;
+}
+.plaintable td {
+  padding: unset;
+}
+
 .brbanner h1 {
   margin:0px;
   font-size: xx-large;
 }
 
 .testbtn {
-  background:#77c487 !important;
+  background: white !important;
 }
 
 pre.bash {
