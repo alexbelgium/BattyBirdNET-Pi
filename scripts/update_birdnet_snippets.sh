@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 # Update BirdNET-Pi
+
+set -x
+
 source /etc/birdnet/birdnet.conf
 trap 'exit 1' SIGINT SIGHUP
 USER=$(awk -F: '/1000/ {print $1}' /etc/passwd)
