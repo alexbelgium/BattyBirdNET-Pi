@@ -13,14 +13,14 @@ export PYTHON_VIRTUAL_ENV="$HOME/BirdNET-Pi/birdnet/bin/python3"
 
 install_depends() {
   apt install -y debian-keyring debian-archive-keyring apt-transport-https
-  curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | sudo gpg --yes --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+  curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | sudo gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
   curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | sudo tee /etc/apt/sources.list.d/caddy-stable.list
   apt -qqq update && apt -qqy upgrade
   echo "icecast2 icecast2/icecast-setup boolean false" | debconf-set-selections
-  apt install -qqy caddy sqlite3 php-sqlite3 php-fpm php-curl php-xml php-zip php icecast2 \
-    pulseaudio avahi-utils sox libsox-fmt-mp3 alsa-utils ffmpeg \
-    wget curl unzip bc \
-    python3-pip python3-venv lsof net-tools inotify-tools
+  apt install -qqy caddy ftpd sqlite3 php-sqlite3 alsa-utils \
+    pulseaudio avahi-utils sox libsox-fmt-mp3 php-fpm php-curl php-xml \
+    php-zip php icecast2 swig ffmpeg wget unzip curl cmake make bc libjpeg-dev \
+    zlib1g-dev python3-dev python3-pip python3-venv lsof net-tools
 }
 
 
@@ -52,7 +52,7 @@ Restart=always
 Type=simple
 RestartSec=2
 User=${USER}
-ExecStart=$PYTHON_VIRTUAL_ENV /usr/local/bin/birdnet_analysis.py
+ExecStart=/usr/local/bin/birdnet_analysis.sh
 [Install]
 WantedBy=multi-user.target
 EOF
@@ -137,13 +137,9 @@ create_necessary_dirs() {
   [ -d ${EXTRACTED}/By_Date ] || sudo -u ${USER} mkdir -p ${EXTRACTED}/By_Date
   [ -d ${EXTRACTED}/Charts ] || sudo -u ${USER} mkdir -p ${EXTRACTED}/Charts
   [ -d ${PROCESSED} ] || sudo -u ${USER} mkdir -p ${PROCESSED}
-  [ -d $RECS_DIR/StreamData ] || sudo -u ${USER} mkdir -p $RECS_DIR/StreamData
-  [ -L ${EXTRACTED}/spectrogram.png ] || sudo -u ${USER} ln -sf ${RECS_DIR}/StreamData/spectrogram.png ${EXTRACTED}/spectrogram.png
 
   sudo -u ${USER} ln -fs $my_dir/exclude_species_list.txt $my_dir/scripts
   sudo -u ${USER} ln -fs $my_dir/include_species_list.txt $my_dir/scripts
-  sudo -u ${USER} ln -fs $my_dir/whitelist_species_list.txt $my_dir/scripts
-  sudo -u ${USER} ln -fs $my_dir/confirmed_species_list.txt $my_dir/scripts
   sudo -u ${USER} ln -fs $my_dir/homepage/* ${EXTRACTED}
   sudo -u ${USER} ln -fs $my_dir/model/labels.txt ${my_dir}/scripts
   sudo -u ${USER} ln -fs $my_dir/scripts ${EXTRACTED}
@@ -291,7 +287,7 @@ EOF
   systemctl enable caddy
   usermod -aG $USER caddy
   usermod -aG video caddy
-  chmod g+r+x $HOME
+  chmod g+x $HOME
 }
 
 install_avahi_aliases() {
@@ -310,9 +306,6 @@ WantedBy=multi-user.target
 EOF
   ln -sf $HOME/BirdNET-Pi/templates/avahi-alias@.service /usr/lib/systemd/system
   systemctl enable avahi-alias@"$(hostname)".local.service
-  # symbolic link does not work here, so just copy
-  cp -f $HOME/BirdNET-Pi/templates/http.service /etc/avahi/services/
-  systemctl restart avahi-daemon.service
 }
 
 install_birdnet_stats_service() {
@@ -339,7 +332,7 @@ install_spectrogram_service() {
 Description=BirdNET-Pi Spectrogram Viewer
 [Service]
 Restart=always
-RestartSec=10
+RestartSec=1
 Type=simple
 User=${USER}
 ExecStart=/usr/local/bin/spectrogram.sh
@@ -360,7 +353,7 @@ Restart=always
 RestartSec=120
 Type=simple
 User=$USER
-ExecStart=$PYTHON_VIRTUAL_ENV /usr/local/bin/daily_plot.py --daemon --sleep 2
+ExecStart=$PYTHON_VIRTUAL_ENV /usr/local/bin/daily_plot.py
 [Install]
 WantedBy=multi-user.target
 EOF
@@ -382,7 +375,7 @@ RestartSec=3
 Type=simple
 User=${USER}
 Environment=TERM=xterm-256color
-ExecStart=/usr/local/bin/gotty --address localhost -p 8080 --path log --title-format "BirdNET-Pi Log" birdnet_log.sh
+ExecStart=/usr/local/bin/gotty --address localhost -p 8080 -P log --title-format "BirdNET-Pi Log" birdnet_log.sh
 [Install]
 WantedBy=multi-user.target
 EOF
@@ -396,7 +389,7 @@ Restart=on-failure
 RestartSec=3
 Type=simple
 Environment=TERM=xterm-256color
-ExecStart=/usr/local/bin/gotty --address localhost -w -p 8888 --path terminal --title-format "BirdNET-Pi Terminal" login
+ExecStart=/usr/local/bin/gotty --address localhost -w -p 8888 -P terminal --title-format "BirdNET-Pi Terminal" login
 [Install]
 WantedBy=multi-user.target
 EOF
@@ -429,7 +422,7 @@ config_icecast() {
   for i in "${passwords[@]}";do
   sed -i "s/<${i}password>.*<\/${i}password>/<${i}password>${ICE_PWD}<\/${i}password>/g" /etc/icecast2/icecast.xml
   done
-  sed -i 's|<!-- <bind-address>.*|<bind-address>127.0.0.1</bind-address>|;s|<!-- <shoutcast-mount>.*|<shoutcast-mount>/stream</shoutcast-mount>|' /etc/icecast2/icecast.xml
+  sed -i 's|<!-- <bind-address>.*|<bind-address>127.0.0.1</bind-address>|;s|<!-- <shoutcast-mount>.*|<shoutcast-mount>/stream</shoutcast-mount>|'  /etc/icecast2/icecast.xml
 
   systemctl enable icecast2.service
 }
@@ -480,7 +473,6 @@ install_services() {
   set_hostname
   update_etc_hosts
   set_login
-  install_tmp_mount
 
   install_depends
   install_scripts
@@ -498,7 +490,6 @@ install_services() {
   install_gotty_logs
   install_phpsysinfo
   install_livestream_service
-  install_birdnet_mount
   install_cleanup_cron
   install_weekly_cron
   increase_caddy_timeout
@@ -513,7 +504,6 @@ install_services() {
 
 if [ -f ${config_file} ];then
   source ${config_file}
-  source install_helpers.sh
   install_services
   chown_things
 else
