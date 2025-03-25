@@ -1,25 +1,46 @@
 #!/usr/bin/env bash
-# Update BirdNET-Pi
-
 set -x
-
-source /etc/birdnet/birdnet.conf
+# Update BirdNET-Pi
 trap 'exit 1' SIGINT SIGHUP
-USER=$(awk -F: '/1000/ {print $1}' /etc/passwd)
-HOME=$(awk -F: '/1000/ {print $6}' /etc/passwd)
+source /etc/birdnet/birdnet.conf
+if [ -n "${BIRDNET_USER}" ]; then
+  echo "BIRDNET_USER: ${BIRDNET_USER}"
+  USER=${BIRDNET_USER}
+  HOME=/home/${BIRDNET_USER}
+else
+  echo "WARNING: no BIRDNET_USER found"
+  USER=$(awk -F: '/1000/ {print $1}' /etc/passwd)
+  HOME=$(awk -F: '/1000/ {print $6}' /etc/passwd)
+fi
 my_dir=$HOME/BirdNET-Pi/scripts
+source "$my_dir/install_helpers.sh"
 
 # Sets proper permissions and ownership
-sudo -E chown -R $USER:$USER $HOME/*
-chmod -R g+wr $HOME
 find $HOME/Bird* -type f ! -perm -g+wr -exec chmod g+wr {} + 2>/dev/null
 find $HOME/Bird* -not -user $USER -execdir sudo -E chown $USER:$USER {} \+
 chmod 666 ~/BirdNET-Pi/scripts/*.txt
 chmod 666 ~/BirdNET-Pi/*.txt
 find $HOME/BirdNET-Pi -path "$HOME/BirdNET-Pi/birdnet" -prune -o -type f ! -perm /o=w -exec chmod a+w {} \;
+chmod g+r $HOME
 
 # remove world-writable perms
 chmod -R o-w ~/BirdNET-Pi/templates/*
+
+APT_UPDATED=0
+PIP_UPDATED=0
+
+# helpers
+sudo_with_user () {
+  sudo -u $USER "$@"
+}
+
+ensure_apt_updated () {
+  [[ $APT_UPDATED != "UPDATED" ]] && apt-get update && APT_UPDATED="UPDATED"
+}
+
+ensure_pip_updated () {
+  [[ $PIP_UPDATED != "UPDATED" ]] && sudo_with_user $HOME/BirdNET-Pi/birdnet/bin/pip3 install -U pip && PIP_UPDATED="UPDATED"
+}
 
 chmod +x ~/BirdNET-Pi/scripts/guano_edit.py
 chmod +x ~/BirdNET-Pi/scripts/batnet_timer.sh
@@ -264,6 +285,7 @@ if ! grep CUSTOM_IMAGE_TITLE /etc/birdnet/birdnet.conf &>/dev/null;then
   sudo -u $USER echo "CUSTOM_IMAGE_TITLE=\"\"" >> /etc/birdnet/birdnet.conf
 fi
 
+
 if ! grep APPRISE_ONLY_NOTIFY_SPECIES_NAMES /etc/birdnet/birdnet.conf &>/dev/null;then
   sudo -u $USER echo "APPRISE_ONLY_NOTIFY_SPECIES_NAMES=\"\"" >> /etc/birdnet/birdnet.conf
 fi
@@ -292,6 +314,33 @@ fi
 
 if ! grep LogLevel_SpectrogramViewerService /etc/birdnet/birdnet.conf &>/dev/null;then
   sudo -u $USER echo "LogLevel_SpectrogramViewerService=\"error\"" >> /etc/birdnet/birdnet.conf
+fi
+
+if ! grep -E '^INFO_SITE=' /etc/birdnet/birdnet.conf &>/dev/null;then
+  echo "INFO_SITE=\"ALLABOUTBIRDS\"" >> /etc/birdnet/birdnet.conf
+fi
+
+if ! grep -E '^COLOR_SCHEME=' /etc/birdnet/birdnet.conf &>/dev/null;then
+  echo "COLOR_SCHEME=\"light\"" >> /etc/birdnet/birdnet.conf
+fi
+
+if ! grep -E '^PURGE_THRESHOLD=' /etc/birdnet/birdnet.conf &>/dev/null;then
+  echo "PURGE_THRESHOLD=95" >> /etc/birdnet/birdnet.conf
+fi
+
+if ! grep -E '^MAX_FILES_SPECIES=' /etc/birdnet/birdnet.conf &>/dev/null;then
+  echo "MAX_FILES_SPECIES=\"0\"" >> /etc/birdnet/birdnet.conf
+fi
+
+if ! grep -E '^CONFIRM_SPECIES=' /etc/birdnet/birdnet.conf &>/dev/null;then
+  echo "## CONFIRM_SPECIES adds an icon next to species in the Recordings tab to keep track which species are manually confirmed" >> /etc/birdnet/birdnet.conf 
+  echo "## It generates a confirmed_species_list.txt file, and allows to better visualize species that could be false positives" >> /etc/birdnet/birdnet.conf
+  echo "CONFIRM_SPECIES=0" >> /etc/birdnet/birdnet.conf
+fi
+
+if ! grep -E '^RARE_SPECIES_THRESHOLD=' /etc/birdnet/birdnet.conf &>/dev/null;then
+  echo '# RARE_SPECIES_THRESHOLD defines after how many days a species is considered as rare and highlighted on overview page' >> /etc/birdnet/birdnet.conf
+  echo "RARE_SPECIES_THRESHOLD=\"30\"" >> /etc/birdnet/birdnet.conf
 fi
 
 if grep -q '^MODEL=BirdNET_GLOBAL_3K_V2.3_Model_FP16$' /etc/birdnet/birdnet.conf;then
