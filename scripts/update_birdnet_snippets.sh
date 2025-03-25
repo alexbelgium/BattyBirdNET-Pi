@@ -41,7 +41,7 @@ ExecStart=/usr/local/bin/batnet_timer.sh
 WantedBy=multi-user.target
 EOF
   ln -sf $HOME/BirdNET-Pi/templates/batnet_timer_server.service /usr/lib/systemd/system
-  sudo systemctl enable batnet_timer_server.service
+  #sudo systemctl enable batnet_timer_server.service
 }
 
 if grep -q 'php7.4-' /etc/caddy/Caddyfile &>/dev/null; then
@@ -63,7 +63,7 @@ if ! grep BAT_TIMER /etc/birdnet/birdnet.conf &>/dev/null;then
   sudo -u $USER echo "BAT_DUSK=\"18:00\"" >> /etc/birdnet/birdnet.conf
   sudo -u $USER echo "BAT_DAWN=\"06:00\"" >> /etc/birdnet/birdnet.conf
   install_batnet_timer_server
-  sudo systemctl start batnet_timer_server.service
+  #sudo systemctl start batnet_timer_server.service
 fi
 
 if ! grep NOISERED /etc/birdnet/birdnet.conf &>/dev/null;then
@@ -103,14 +103,14 @@ fi
 if ! grep 'BirdNET-Pi/birdnet/' $HOME/BirdNET-Pi/templates/birdnet_server.service &>/dev/null || ! grep 'BirdNET-Pi/birdnet' $HOME/BirdNET-Pi/templates/chart_viewer.service &>/dev/null;then
   sudo -E sed -i "s|ExecStart=.*|ExecStart=$HOME/BirdNET-Pi/birdnet/bin/python3 /usr/local/bin/server.py|" ~/BirdNET-Pi/templates/birdnet_server.service
   sudo -E sed -i "s|ExecStart=.*|ExecStart=$HOME/BirdNET-Pi/birdnet/bin/python3 /usr/local/bin/daily_plot.py|" ~/BirdNET-Pi/templates/chart_viewer.service
-  sudo systemctl daemon-reload && restart_services.sh
+  #sudo systemctl daemon-reload && restart_services.sh
 fi
 
 if grep privacy ~/BirdNET-Pi/templates/birdnet_server.service &>/dev/null;then
   sudo -E sed -i 's/privacy_server.py/server.py/g' \
     ~/BirdNET-Pi/templates/birdnet_server.service
   sudo systemctl daemon-reload
-  restart_services.sh
+  #restart_services.sh
 fi
 if ! grep APPRISE_NOTIFICATION_TITLE /etc/birdnet/birdnet.conf &>/dev/null;then
   sudo -u $USER echo "APPRISE_NOTIFICATION_TITLE=\"New BirdNET-Pi Detection\"" >> /etc/birdnet/birdnet.conf
@@ -152,15 +152,15 @@ if ! grep RTSP_STREAM /etc/birdnet/birdnet.conf &>/dev/null;then
 fi
 if grep bash $HOME/BirdNET-Pi/templates/web_terminal.service &>/dev/null;then
   sudo sed -i '/User/d;s/bash/login/g' $HOME/BirdNET-Pi/templates/web_terminal.service
-  sudo systemctl daemon-reload
-  sudo systemctl restart web_terminal.service
+  #sudo systemctl daemon-reload
+  #sudo systemctl restart web_terminal.service
 fi
 [ -L ~/BirdSongs/Extracted/static ] || ln -sf ~/BirdNET-Pi/homepage/static ~/BirdSongs/Extracted
 if ! grep FLICKR_API_KEY /etc/birdnet/birdnet.conf &>/dev/null;then
   sudo -u $USER echo "FLICKR_API_KEY=" >> /etc/birdnet/birdnet.conf
 fi
 if systemctl list-unit-files pushed_notifications.service &>/dev/null;then
-  sudo systemctl disable --now pushed_notifications.service
+  #sudo systemctl disable --now pushed_notifications.service
   sudo rm -f /usr/lib/systemd/system/pushed_notifications.service
   sudo rm $HOME/BirdNET-Pi/templates/pushed_notifications.service
 fi
@@ -196,11 +196,11 @@ fi
 
 if ! grep '\-\-browser.gatherUsageStats false' $HOME/BirdNET-Pi/templates/birdnet_stats.service &>/dev/null ;then
   sudo -E sed -i "s|ExecStart=.*|ExecStart=$HOME/BirdNET-Pi/birdnet/bin/streamlit run $HOME/BirdNET-Pi/scripts/plotly_streamlit.py --browser.gatherUsageStats false --server.address localhost --server.baseUrlPath \"/stats\"|" $HOME/BirdNET-Pi/templates/birdnet_stats.service
-  sudo systemctl daemon-reload && restart_services.sh
+  #sudo systemctl daemon-reload && restart_services.sh
 fi
 
 # Make IceCast2 a little more secure
-sudo sed -i.bak -e 's|<!-- <bind-address>.*|<bind-address>127.0.0.1</bind-address>|;s|<!-- <shoutcast-mount>.*|<shoutcast-mount>/stream</shoutcast-mount>|' /etc/icecast2/icecast.xml && if [ -s /etc/icecast2/icecast.xml.bak ] && ! sudo diff /etc/icecast2/icecast.xml /etc/icecast2/icecast.xml.bak > /dev/null; then sudo systemctl restart icecast2; fi
+#sudo sed -i.bak -e 's|<!-- <bind-address>.*|<bind-address>127.0.0.1</bind-address>|;s|<!-- <shoutcast-mount>.*|<shoutcast-mount>/stream</shoutcast-mount>|' /etc/icecast2/icecast.xml && if [ -s /etc/icecast2/icecast.xml.bak ] && ! sudo diff /etc/icecast2/icecast.xml /etc/icecast2/icecast.xml.bak > /dev/null; then sudo systemctl restart icecast2; fi
 
 if ! grep FREQSHIFT_TOOL /etc/birdnet/birdnet.conf &>/dev/null;then
   sudo -u $USER echo "FREQSHIFT_TOOL=sox" >> /etc/birdnet/birdnet.conf
@@ -324,6 +324,6 @@ if [ ! -f "$labels_file" ]; then
 fi
 
 
-sudo systemctl daemon-reload
-restart_services.sh
-sudo systemctl restart batnet_timer_server.service
+#sudo systemctl daemon-reload
+#restart_services.sh
+#sudo systemctl restart batnet_timer_server.service
