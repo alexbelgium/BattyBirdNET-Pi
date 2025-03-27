@@ -117,10 +117,12 @@ for h in "${SCAN_DIRS[@]}";do
 
     if [[ $NOISERED == true ]];then
       sox -V1 "${h}/${OLDFILE}" "${NEWSPECIES_BYDATE}/${NEWFILE}" \
-      trim ="${START}" ="${END}" noisered "${HOME}/${NOISE_PROF}" "${NOISE_PROF_FACTOR}"
+      trim ="${START}" ="${END}" noisered "${HOME}/${NOISE_PROF}" "${NOISE_PROF_FACTOR}" \
+      rate "$SAMPLING_RATE"
     else
       sox -V1 "${h}/${OLDFILE}" "${NEWSPECIES_BYDATE}/${NEWFILE}" \
-      trim ="${START}" ="${END}"
+      trim ="${START}" ="${END}" \
+      rate "$SAMPLING_RATE"
     fi
 #    sox -V1 "${h}/${OLDFILE}" "${NEWSPECIES_BYDATE}/${NEWFILE}" \
 #      trim ="${START}" ="${END}"
