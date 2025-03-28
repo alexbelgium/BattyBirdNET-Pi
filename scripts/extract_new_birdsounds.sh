@@ -163,7 +163,8 @@ for h in "${SCAN_DIRS[@]}";do
   # next extraction.
   [[ -d "${PROCESSED}" ]] || mkdir "${PROCESSED}"
   #echo "Moving processed files to ${PROCESSED}"
-  mv ${h}/* ${PROCESSED} &> /dev/null || true
+  # mv ${h}/* ${PROCESSED} &> /dev/null || true
+  rm ${h}/*
 
   # Removes old directories
   if echo "${h}" | grep $(date --date="-2 day" "+%A") &> /dev/null;then
