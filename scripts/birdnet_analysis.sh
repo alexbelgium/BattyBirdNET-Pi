@@ -117,16 +117,22 @@ run_analysis() {
     itr=0
     until [ -z "$(lsof -t ${1}/${i})" ];do
       itr=$((itr+1))
-      if [ $itr -eq $(($RECORDING_LENGTH * 3)) ]; then
+      if [ $itr -ge 30 ]; then
         echo "Maximum number of attempts exceeded. Exiting & restarting service."
         exit
       fi
-      sleep $RECORDING_LENGTH
+      sleep 1
     done
 
     if ! grep 5050 <(netstat -tulpn 2>&1) &> /dev/null 2>&1;then
       echo "Waiting for socket"
+      itr=0
       until grep 5050 <(netstat -tulpn 2>&1) &> /dev/null 2>&1;do
+        itr=$((itr+1))
+        if [ $itr -ge 120 ]; then
+          echo "Timed out waiting for BirdNET server on port 5050. Exiting."
+          exit 1
+        fi
         sleep 1
       done
     fi
@@ -200,7 +206,13 @@ run_birdnet() {
   move_analyzed "${1}"
 }
 
+itr=0
 until grep 5050 <(netstat -tulpn 2>&1) &> /dev/null 2>&1;do
+  itr=$((itr+1))
+  if [ $itr -ge 120 ]; then
+    echo "Timed out waiting for BirdNET server on port 5050. Exiting."
+    exit 1
+  fi
   sleep 1
 done
 

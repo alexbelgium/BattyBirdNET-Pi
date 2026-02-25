@@ -59,7 +59,13 @@ status=$?
 if (( status != 0 )); then
   logger "[$0] Unable to start batdnet_server.service... Looping until it start properly"
 
+  retries=0
   until grep 7667 <(netstat -tulpn 2>&1);do
+    retries=$((retries+1))
+    if [ $retries -ge 5 ]; then
+      logger "[$0] Failed to start batnet_server.service after $retries attempts. Giving up."
+      break
+    fi
     sudo systemctl restart batnet_server.service
     sleep 45
   done
@@ -73,7 +79,13 @@ status=$?
 if (( status != 0 )); then
   logger "[$0] Unable to start birdnet_server.service... Looping until it start properly"
 
+  retries=0
   until grep 5050 <(netstat -tulpn 2>&1);do
+    retries=$((retries+1))
+    if [ $retries -ge 5 ]; then
+      logger "[$0] Failed to start birdnet_server.service after $retries attempts. Giving up."
+      break
+    fi
     sudo systemctl restart birdnet_server.service
     sleep 45
   done
