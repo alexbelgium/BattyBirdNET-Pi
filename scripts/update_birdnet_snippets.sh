@@ -46,6 +46,8 @@ chmod +x ~/BirdNET-Pi/scripts/guano_edit.py
 chmod +x ~/BirdNET-Pi/scripts/batnet_timer.sh
 chmod +x ~/BirdNET-Pi/scripts/sun_info.py
 chmod +x ~/BirdNET-Pi/scripts/switch_classifier.sh
+chmod +x ~/BirdNET-Pi/scripts/disk_species_clean.sh
+chmod +x ~/BirdNET-Pi/scripts/disk_species_count.sh
 $HOME/BirdNET-Pi/birdnet/bin/pip3 install python-dateutil datetime
 
 install_batnet_timer_server() {

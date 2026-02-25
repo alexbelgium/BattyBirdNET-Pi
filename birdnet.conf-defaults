@@ -158,6 +158,12 @@ CHANNELS=1
 
 FULL_DISK=purge
 
+## MAX_FILES_SPECIES defines the maximum number of audio files to keep per species.
+## If set to 0, all files are kept (no limit). Files from the last 7 days are always
+## protected. When trimming, files with lower confidence are removed first.
+
+MAX_FILES_SPECIES=0
+
 ## PRIVACY_THRESHOLD can be set to enable sensitivity to Human sounds. This
 ## setting is an effort to introduce privacy into the data collection.
 ## The PRIVACY_THRESHOLD value represents a percentage of the entire species

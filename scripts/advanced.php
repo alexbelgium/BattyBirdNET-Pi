@@ -35,6 +35,15 @@ if (!isset($_SERVER['PHP_AUTH_USER'])) {
   }
 }
 
+if (isset($_GET['run_species_count'])) {
+   $user = trim(shell_exec("awk -F: '/1000/{print \$1}' /etc/passwd"));
+   $home = trim(shell_exec("awk -F: '/1000/{print \$6}' /etc/passwd"));
+   echo "<script>";
+   $output = shell_exec("sudo -u $user ".$home."/BirdNET-Pi/scripts/disk_species_count.sh 2>&1");
+   $escaped_output = htmlspecialchars($output, ENT_QUOTES | ENT_SUBSTITUTE);
+   echo "alert(`$escaped_output`);";
+   echo "</script>";
+}
 
 if(isset($_GET['submit'])) {
   $contents = file_get_contents('/etc/birdnet/birdnet.conf');
@@ -175,6 +184,14 @@ if(isset($_GET['submit'])) {
     if(strcmp($full_disk,$config['FULL_DISK']) !== 0) {
       $contents = preg_replace("/FULL_DISK=.*/", "FULL_DISK=$full_disk", $contents);
       $contents2 = preg_replace("/FULL_DISK=.*/", "FULL_DISK=$full_disk", $contents2);
+    }
+  }
+
+  if(isset($_GET["max_files_species"])) {
+    $max_files_species = $_GET["max_files_species"];
+    if(strcmp($max_files_species,$config['MAX_FILES_SPECIES']) !== 0) {
+      $contents = preg_replace("/MAX_FILES_SPECIES=.*/", "MAX_FILES_SPECIES=$max_files_species", $contents);
+      $contents2 = preg_replace("/MAX_FILES_SPECIES=.*/", "MAX_FILES_SPECIES=$max_files_species", $contents2);
     }
   }
 
@@ -643,6 +660,16 @@ if (file_exists('./scripts/thisrun.txt')) {
       <label for="keep">
       <input name="full_disk" type="radio" id="keep" value="keep" <?php if (strcmp($newconfig['FULL_DISK'], "keep") == 0) { echo "checked"; }?>>Keep</label>
       <p>When the disk becomes full, you can choose to 'purge' old files to make room for new ones or 'keep' your data and stop all services instead.<br>Note: you can exclude specific files from 'purge' on the Recordings page.</p>
+      <br>
+      <label for="max_files_species">Number of files to keep for each species :</label>
+      <input name="max_files_species" type="number" style="width:6em;" min="0" step="1" value="<?php print($newconfig['MAX_FILES_SPECIES']);?>"/>
+      </td></tr><tr><td>
+      If different than 0 (keep all), defines the number of files to keep for each species, with priority given to files with higher confidence. This value does not include files from the last 7 days, these new files are protected against auto-deletion.
+      </td></tr><tr><td>
+      Note only the spectrogram and audio files are deleted, the observation data remains in the database.
+      The files protected through the "lock" icon are also not affected.
+      <br>
+      <button type="submit" name="run_species_count" value="1" onclick="{this.innerHTML = 'Loading ... please wait.';this.classList.add('disabled')}"><i>[Click here for disk usage summary]</i></button>
       </td></tr></table><br>
       <table class="settingstable"><tr><td>
 
