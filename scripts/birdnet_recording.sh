@@ -51,7 +51,13 @@ else
   if pgrep arecord &> /dev/null ;then
     echo "Recording"
   else
+    itr=0
     until grep 5050 <(netstat -tulpn 2>&1);do
+      itr=$((itr+1))
+      if [ $itr -ge 120 ]; then
+        echo "Timed out waiting for BirdNET server on port 5050. Exiting."
+        exit 1
+      fi
       sleep 1
     done
     if [ -z ${REC_CARD} ];then

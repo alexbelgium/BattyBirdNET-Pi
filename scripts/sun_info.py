@@ -29,9 +29,9 @@ def main(lat, lon, updown):
         print("Error: {0}.".format(e))
 
     if updown == "up":
-        t_time = today_sr.strftime('%H:%M')
+        t_time = today_sr if isinstance(today_sr, str) else today_sr.strftime('%H:%M')
     else:
-        t_time = today_ss.strftime('%H:%M')
+        t_time = today_ss if isinstance(today_ss, str) else today_ss.strftime('%H:%M')
     return t_time
 
 
