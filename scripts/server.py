@@ -10,6 +10,8 @@ import socket
 import threading
 import os
 import gzip
+import io
+import soundfile
 
 from utils.notifications import sendAppriseNotifications
 from utils.parse_settings import config_to_settings
@@ -354,10 +356,17 @@ def handle_client(conn, addr):
                                                              '?timestamp=' + \
                                                              current_iso8601
 
-                                            with open(args.i, 'rb') as f:
-                                                wav_data = f.read()
-                                            gzip_wav_data = gzip.compress(wav_data)
-                                            response = requests.post(url=soundscape_url, data=gzip_wav_data, headers={
+                                            try:
+                                                data, samplerate = soundfile.read(args.i)
+                                                buf = io.BytesIO()
+                                                soundfile.write(buf, data, samplerate, format='FLAC')
+                                                flac_data = buf.getvalue()
+                                            except Exception as e:
+                                                print("Error during FLAC conversion: %s", e)
+                                                return
+                                            gzip_flac_data = gzip.compress(flac_data)
+
+                                            response = requests.post(url=soundscape_url, data=gzip_flac_data, headers={
                                                 'Content-Type': 'application/octet-stream',
                                                 'Content-Encoding': 'gzip'})
                                             print("Soundscape POST Response Status - ", response.status_code)
