@@ -305,8 +305,8 @@ def handle_client(conn, addr):
 
                                 # Apprise of detection if not already alerted this run.
                                 if not entry[0] in species_apprised_this_run:
-                                    settings_dict = config_to_settings(userDir + '/BirdNET-Pi/scripts/thisrun.txt')
-                                    sendAppriseNotifications(species,
+                                    sendAppriseNotifications(Sci_Name,
+                                                             Com_Name,
                                                              str(score),
                                                              str(round(score * 100)),
                                                              File_Name,
@@ -317,9 +317,7 @@ def handle_client(conn, addr):
                                                              Lon,
                                                              Cutoff,
                                                              Sens,
-                                                             Overlap,
-                                                             settings_dict,
-                                                             DB_PATH)
+                                                             Overlap)
                                     species_apprised_this_run.append(entry[0])
 
                                 print(str(current_date) +
