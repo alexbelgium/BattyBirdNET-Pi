@@ -9,6 +9,20 @@ PYTHON_VIRTUAL_ENV="$HOME/BirdNET-Pi/birdnet/bin/python3"
 #export my_dir=$my_dir
 # cd "$my_dir" || exit 1
 
+# Convert HH:MM time string to minutes since midnight for reliable numeric comparison
+time_to_minutes() {
+  local t="$1"
+  local hours minutes
+  hours=$((10#${t%%:*}))
+  minutes=$((10#${t##*:}))
+  echo $(( hours * 60 + minutes ))
+}
+
+# Validate that a string is a valid HH:MM time
+is_valid_time() {
+  [[ "$1" =~ ^([01][0-9]|2[0-3]):[0-5][0-9]$ ]]
+}
+
 start_service() {
   echo "Starting BattyBirdNET timer (dusk - dawn) service."
 
@@ -66,9 +80,21 @@ start_service() {
     if [[ $BAT_SUNTIMER == true ]];then
       BAT_DAWN=$($PYTHON_VIRTUAL_ENV "${my_dir}"/sun_info.py --lat "${LATITUDE}" --lon "${LONGITUDE}" --updown up)
       BAT_DUSK=$($PYTHON_VIRTUAL_ENV "${my_dir}"/sun_info.py --lat "${LATITUDE}" --lon "${LONGITUDE}" --updown down)
+      if ! is_valid_time "$BAT_DAWN"; then
+        echo "Warning: Invalid dawn time from sun_info.py ('$BAT_DAWN'). Using default 06:00."
+        BAT_DAWN="06:00"
+      fi
+      if ! is_valid_time "$BAT_DUSK"; then
+        echo "Warning: Invalid dusk time from sun_info.py ('$BAT_DUSK'). Using default 18:00."
+        BAT_DUSK="18:00"
+      fi
     fi
 
-    if [[ "$currenttime" > "$BAT_DUSK" ]] || [[ "$currenttime" < "$BAT_DAWN" ]];then
+    current_minutes=$(time_to_minutes "$currenttime")
+    dusk_minutes=$(time_to_minutes "$BAT_DUSK")
+    dawn_minutes=$(time_to_minutes "$BAT_DAWN")
+
+    if [ "$current_minutes" -ge "$dusk_minutes" ] || [ "$current_minutes" -lt "$dawn_minutes" ];then
       if [[ $running == false ]];then
         if [[ $SWITCH_TO_BIRD == true ]];then
           sudo /usr/local/bin/switch_classifier.sh -c "${LAST_CLASSIFIER}" -t bat
