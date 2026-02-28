@@ -140,6 +140,32 @@ function copyOutput(elem) {
 
 <div class="views">
 <?php
+function update_species_list($filename, $species, $add) {
+    if($add){
+        $str = file_get_contents($filename);
+        $str = preg_replace("/(^[\r\n]*|[\r\n]+)[\s\t]*[\r\n]+/", "\n", $str);
+        file_put_contents("$filename", "$str");
+        foreach ($species as $selectedOption) {
+            if (strpos($str, $selectedOption) === false) {
+                file_put_contents($filename, htmlspecialchars_decode($selectedOption, ENT_QUOTES)."\n", FILE_APPEND);
+            }
+        }
+    } else {
+        $str = file_get_contents($filename);
+        $str = preg_replace('/^\h*\v+/m', '', $str);
+        file_put_contents($filename, "$str");
+        foreach($species as $selectedOption) {
+              $content = file_get_contents($filename);
+              $newcontent = str_replace($selectedOption, "", "$content");
+              $newcontent = str_replace(htmlspecialchars_decode($selectedOption, ENT_QUOTES), "", "$newcontent");
+              file_put_contents($filename, "$newcontent");
+        }
+        $str = file_get_contents($filename);
+        $str = preg_replace('/^\h*\v+/m', '', $str);
+        file_put_contents($filename, "$str");
+    }
+}
+
 if(isset($_GET['view'])){
   if($_GET['view'] == "System Info"){echo "<iframe src='phpsysinfo/index.php'></iframe>";}
   if($_GET['view'] == "System Controls"){include('scripts/system_controls.php');}
@@ -176,6 +202,8 @@ if(isset($_GET['view'])){
           <button type=\"submit\" name=\"view\" value=\"Webterm\" form=\"views\">Web Terminal</button>
           <button type=\"submit\" name=\"view\" value=\"Included\" form=\"views\">Custom Species List</button>
           <button type=\"submit\" name=\"view\" value=\"Excluded\" form=\"views\">Excluded Species List</button>
+          <button type=\"submit\" name=\"view\" value=\"Whitelisted\" form=\"views\">Whitelist Species List</button>
+          <button type=\"submit\" name=\"view\" value=\"Species Management\" form=\"views\">Species Management</button>
           </form>
           </div>";
       } else {
@@ -190,56 +218,28 @@ if(isset($_GET['view'])){
   if($_GET['view'] == "Settings"){include('scripts/config.php');} 
   if($_GET['view'] == "Advanced"){include('scripts/advanced.php');}
   if($_GET['view'] == "Included"){
-    if(isset($_GET['species']) && isset($_GET['add'])){
-      $file = './scripts/include_species_list.txt';
-      $str = file_get_contents("$file");
-      $str = preg_replace("/(^[\r\n]*|[\r\n]+)[\s\t]*[\r\n]+/", "\n", $str);
-      file_put_contents("$file", "$str");
-      if(isset($_GET['species'])){
-        foreach ($_GET['species'] as $selectedOption)
-          file_put_contents("./scripts/include_species_list.txt", $selectedOption."\n", FILE_APPEND);
-      }
-    } elseif(isset($_GET['species']) && isset($_GET['del'])){
-      $file = './scripts/include_species_list.txt';
-      $str = file_get_contents("$file");
-      $str = preg_replace('/^\h*\v+/m', '', $str);
-      file_put_contents("$file", "$str");
-      foreach($_GET['species'] as $selectedOption) {
-        $content = file_get_contents("../BirdNET-Pi/include_species_list.txt");
-        $newcontent = str_replace($selectedOption, "", "$content");
-        file_put_contents("./scripts/include_species_list.txt", "$newcontent");
-      }
-      $file = './scripts/include_species_list.txt';
-      $str = file_get_contents("$file");
-      $str = preg_replace('/^\h*\v+/m', '', $str);
-      file_put_contents("$file", "$str");
+    if(isset($_GET['species']) && (isset($_GET['add']) or isset($_GET['del']))){
+        update_species_list("./scripts/include_species_list.txt", $_GET['species'], isset($_GET['add']));
     }
-    include('./scripts/include_list.php');
+    $species_list="include";
+    include('./scripts/species_list.php');
   }
   if($_GET['view'] == "Excluded"){
-    if(isset($_GET['species']) && isset($_GET['add'])){
-      $file = './scripts/exclude_species_list.txt';
-      $str = file_get_contents("$file");
-      $str = preg_replace("/(^[\r\n]*|[\r\n]+)[\s\t]*[\r\n]+/", "\n", $str);
-      file_put_contents("$file", "$str");
-      foreach ($_GET['species'] as $selectedOption)
-        file_put_contents("./scripts/exclude_species_list.txt", $selectedOption."\n", FILE_APPEND);
-    } elseif (isset($_GET['species']) && isset($_GET['del'])){
-      $file = './scripts/exclude_species_list.txt';
-      $str = file_get_contents("$file");
-      $str = preg_replace('/^\h*\v+/m', '', $str);
-      file_put_contents("$file", "$str");
-      foreach($_GET['species'] as $selectedOption) {
-        $content = file_get_contents("./scripts/exclude_species_list.txt");
-        $newcontent = str_replace($selectedOption, "", "$content");
-        file_put_contents("./scripts/exclude_species_list.txt", "$newcontent");
-      }
-      $file = './scripts/exclude_species_list.txt';
-      $str = file_get_contents("$file");
-      $str = preg_replace('/^\h*\v+/m', '', $str);
-      file_put_contents("$file", "$str");
+    if(isset($_GET['species']) && (isset($_GET['add']) or isset($_GET['del']))){
+        update_species_list("./scripts/exclude_species_list.txt", $_GET['species'], isset($_GET['add']));
     }
-    include('./scripts/exclude_list.php');
+    $species_list="exclude";
+    include('./scripts/species_list.php');
+  }
+  if($_GET['view'] == "Whitelisted"){
+    if(isset($_GET['species']) && (isset($_GET['add']) or isset($_GET['del']))){
+        update_species_list("./scripts/whitelist_species_list.txt", $_GET['species'], isset($_GET['add']));
+    }
+    $species_list="whitelist";
+    include('./scripts/species_list.php');
+  }
+  if($_GET['view'] == "Species Management"){
+    include('scripts/species_tools.php');
   }
   if($_GET['view'] == "File"){
     echo "<iframe src='scripts/filemanager/filemanager.php'></iframe>";

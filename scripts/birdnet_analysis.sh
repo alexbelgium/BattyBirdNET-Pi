@@ -31,6 +31,7 @@ fi
 
 INCLUDE_LIST="$HOME/BirdNET-Pi/include_species_list.txt"
 EXCLUDE_LIST="$HOME/BirdNET-Pi/exclude_species_list.txt"
+WHITELIST="$HOME/BirdNET-Pi/whitelist_species_list.txt"
 if [ ! -f ${INCLUDE_LIST} ];then
   touch ${INCLUDE_LIST} &&
     chmod g+rw ${INCLUDE_LIST}
@@ -38,6 +39,10 @@ fi
 if [ ! -f ${EXCLUDE_LIST} ];then
   touch ${EXCLUDE_LIST} &&
     chmod g+rw ${EXCLUDE_LIST}
+fi
+if [ ! -f ${WHITELIST} ];then
+  touch ${WHITELIST} &&
+    chmod g+rw ${WHITELIST}
 fi
 if [ "$(du ${INCLUDE_LIST} | awk '{print $1}')" -lt 4 ];then
 	INCLUDE_LIST=null
