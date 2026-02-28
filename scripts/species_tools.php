@@ -155,7 +155,12 @@ if (isset($_GET['delete'])) {
   $info = collect_species_targets($db, $species, $home, $base);
   $deleted = count($info['files']);
   foreach ($info['dirs'] as $dir) {
-    $escaped_dir = escapeshellarg($dir);
+    $real_dir = realpath($dir);
+    if ($real_dir === false || strpos($real_dir, $home . '/BirdSongs/') !== 0) {
+      echo json_encode(['error' => 'Invalid directory path']);
+      exit;
+    }
+    $escaped_dir = escapeshellarg($real_dir);
     exec("sudo rm -r $escaped_dir 2>&1", $output, $retval);
     if ($retval !== 0) {
       echo json_encode(['error' => 'Files deletion failed: ' . implode(", ", $output)]);
