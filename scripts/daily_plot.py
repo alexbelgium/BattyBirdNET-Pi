@@ -2,7 +2,7 @@ import argparse
 import os
 import sqlite3
 import textwrap
-from datetime import datetime
+from datetime import datetime, timedelta
 from time import sleep
 
 import matplotlib.font_manager as font_manager
@@ -16,12 +16,33 @@ from matplotlib.colors import LogNorm
 from utils.helpers import DB_PATH, get_settings
 
 
+def get_chart_date(dt):
+    """Return the chart date for a given datetime.
+
+    Charts span from noon of the chart date to noon of the following day,
+    so that nocturnal bat activity is captured in a single continuous period.
+    """
+    if dt.hour >= 12:
+        return dt.date()
+    return (dt - timedelta(days=1)).date()
+
+
 def get_data(now=None):
     conn = sqlite3.connect(DB_PATH)
     if now is None:
         now = datetime.now()
-    df = pd.read_sql_query(f"SELECT * from detections WHERE Date = DATE('{now.strftime('%Y-%m-%d')}')",
-                           conn)
+
+    # Determine the chart period: noon of chart_date to noon of chart_date+1
+    chart_date = get_chart_date(now)
+    next_date = chart_date + timedelta(days=1)
+    chart_date_str = chart_date.strftime('%Y-%m-%d')
+    next_date_str = next_date.strftime('%Y-%m-%d')
+
+    df = pd.read_sql_query(
+        f"SELECT * from detections WHERE "
+        f"(Date = '{chart_date_str}' AND Time >= '12:00:00') OR "
+        f"(Date = '{next_date_str}' AND Time < '12:00:00')",
+        conn)
 
     # Convert Date and Time Fields to Panda's format
     df['Date'] = pd.to_datetime(df['Date'])
@@ -30,7 +51,7 @@ def get_data(now=None):
     # Add round hours to dataframe
     df['Hour of Day'] = [r.hour for r in df.Time]
 
-    return df, now
+    return df, now, chart_date
 
 
 # Function to show value on bars - from https://stackoverflow.com/questions/43214978/seaborn-barplot-displaying-values
@@ -64,7 +85,7 @@ def wrap_width(txt):
     return round(w)
 
 
-def create_plot(df_plt_today, now, is_top=None):
+def create_plot(df_plt_today, now, chart_date, is_top=None):
     if is_top is not None:
         readings = 10
         if is_top:
@@ -141,7 +162,7 @@ def create_plot(df_plt_today, now, is_top=None):
     heat.index = pd.CategoricalIndex(heat.index, categories=freq_order)
     heat.sort_index(level=0, inplace=True)
 
-    hours_in_day = pd.Series(data=range(0, 24))
+    hours_in_day = pd.Series(data=list(range(12, 24)) + list(range(0, 12)))
     heat_frame = pd.DataFrame(data=0, index=heat.index, columns=hours_in_day)
     heat = (heat+heat_frame).fillna(0)
     # mask out zeros, so they do not show up in the final plot. this happens when max count/h is one
@@ -175,7 +196,7 @@ def create_plot(df_plt_today, now, is_top=None):
     f.subplots_adjust(left=0.125, right=0.9, top=top, wspace=0)
 
     # Save combined plot
-    save_name = os.path.expanduser(f"~/BirdSongs/Extracted/Charts/{name}-{now.strftime('%Y-%m-%d')}.png")
+    save_name = os.path.expanduser(f"~/BirdSongs/Extracted/Charts/{name}-{chart_date.strftime('%Y-%m-%d')}.png")
     plt.savefig(save_name)
     plt.show()
     plt.close()
@@ -206,14 +227,13 @@ def main(daemon, sleep_m):
         # now = datetime.strptime('2024-02-26T23:59:59', "%Y-%m-%dT%H:%M:%S")
         # now = datetime.strptime('2024-04-03T23:59:59', "%Y-%m-%dT%H:%M:%S")
         # now = datetime.strptime('2024-04-07T23:59:59', "%Y-%m-%dT%H:%M:%S")
-        if last_run and now.day != last_run.day:
-            print("getting yesterday's dataset")
-            yesterday = last_run.replace(hour=23, minute=59)
-            data, time = get_data(yesterday)
+        if last_run and get_chart_date(now) != get_chart_date(last_run):
+            print("getting previous period's dataset")
+            data, time, chart_date = get_data(last_run)
         else:
-            data, time = get_data(now)
+            data, time, chart_date = get_data(now)
         if not data.empty:
-            create_plot(data, time)
+            create_plot(data, time, chart_date)
         else:
             print('empty dataset')
         if daemon:
