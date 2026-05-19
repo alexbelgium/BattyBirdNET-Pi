@@ -39,10 +39,11 @@ def get_data(now=None):
     next_date_str = next_date.strftime('%Y-%m-%d')
 
     df = pd.read_sql_query(
-        f"SELECT * from detections WHERE "
-        f"(Date = '{chart_date_str}' AND Time >= '12:00:00') OR "
-        f"(Date = '{next_date_str}' AND Time < '12:00:00')",
-        conn)
+        "SELECT * from detections WHERE "
+        "(Date = ? AND Time >= '12:00:00') OR "
+        "(Date = ? AND Time < '12:00:00')",
+        conn,
+        params=(chart_date_str, next_date_str))
 
     # Convert Date and Time Fields to Panda's format
     df['Date'] = pd.to_datetime(df['Date'])
